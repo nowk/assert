@@ -1,6 +1,6 @@
 # Assert
 
-Simple test assertions for Go. This is a fork of [bmizerany/assert][original]
+Simple test assertions for Go. This is a fork of a fork of a [bmizerany/assert][original]
 with improved support for things like nil pointers, etc.
 
 [Documentation][docs]
@@ -25,6 +25,7 @@ API
     func Contains(t *testing.T, expected string, got string, messages ...interface{})
     func NotContains(t *testing.T, unexpected string, got string, messages ...interface{})
     func WithinDuration(t *testing.T, duration time.Duration, goalTime, gotTime time.Time, messages ...interface{})
+    func Panic(t *testing.T, err interface{}, fn func(), messages ...interface{})
 
 Example
 -------
@@ -78,4 +79,3 @@ License
 Copyright Blake Mizerany and Keith Rarick. Licensed under the [MIT
 license](http://opensource.org/licenses/MIT). Additional modifications by
 Stovepipe Studios.
-

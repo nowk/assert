@@ -141,3 +141,10 @@ func NotContains(t *testing.T, unexpected, got string, messages ...interface{}) 
 func WithinDuration(t *testing.T, duration time.Duration, goalTime, gotTime time.Time, messages ...interface{}) {
 	withinDuration(t, duration, goalTime, gotTime, 1, messages...)
 }
+
+func Panic(t *testing.T, err interface{}, fn func(), messages ...interface{}) {
+    defer func() {
+        equal(t, err, recover(), 3, messages...)
+    }()
+    fn()
+}
