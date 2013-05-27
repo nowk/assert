@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var errorPrefix = "\U0001F4A9 "
+var errorPrefix = "! "
 
 // -- Assertion handlers
 
