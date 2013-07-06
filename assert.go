@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 var errorPrefix = "\U0001F4A9 "
@@ -66,6 +67,20 @@ func notContains(t *testing.T, unexpected, got string, callDepth int, messages .
 	assert(t, !strings.Contains(got, unexpected), fn, callDepth+1)
 }
 
+func withinDuration(t *testing.T, duration time.Duration, goalTime, gotTime time.Time, callDepth int, messages ...interface{}) {
+	fn := func() {
+		t.Errorf("%s Expected %v to be within %v of %v", errorPrefix, gotTime, duration, goalTime)
+		if len(messages) > 0 {
+			t.Error(errorPrefix, "-", fmt.Sprint(messages...))
+		}
+	}
+	actualDuration := goalTime.Sub(gotTime)
+	if actualDuration < time.Duration(0) {
+		actualDuration = -actualDuration
+	}
+	assert(t, actualDuration <= duration, fn, callDepth+1)
+}
+
 // -- Matching
 
 func isEqual(expected, got interface{}) bool {
@@ -121,4 +136,8 @@ func Contains(t *testing.T, expected, got string, messages ...interface{}) {
 
 func NotContains(t *testing.T, unexpected, got string, messages ...interface{}) {
 	notContains(t, unexpected, got, 1, messages...)
+}
+
+func WithinDuration(t *testing.T, duration time.Duration, goalTime, gotTime time.Time, messages ...interface{}) {
+	withinDuration(t, duration, goalTime, gotTime, 1, messages...)
 }

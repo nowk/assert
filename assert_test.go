@@ -2,6 +2,7 @@ package assert
 
 import (
 	"testing"
+	"time"
 )
 
 type MyStruct struct {
@@ -87,4 +88,16 @@ func TestNotContains(t *testing.T) {
 	NotContains(t, "Lorem", "lorem")
 
 	// NotContains(t, "c", "abc", "This should blow up")
+}
+
+func TestWithinDuration(t *testing.T) {
+	now := time.Now()
+	WithinDuration(t, time.Millisecond, now, now)
+	WithinDuration(t, time.Second, now, now.Add(time.Second))
+	WithinDuration(t, time.Second, now, now.Add(-time.Second))
+	WithinDuration(t, time.Second, now, now.Add(999*time.Millisecond))
+	WithinDuration(t, time.Second, now, now.Add(-999*time.Millisecond))
+
+	// WithinDuration(t, time.Millisecond, now, now.Add(time.Second), "This should blow up")
+	// WithinDuration(t, time.Millisecond, now, now.Add(-time.Second), "This should blow up")
 }

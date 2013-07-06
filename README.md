@@ -24,6 +24,7 @@ API
     func NotNil(t *testing.T, got interface{}, messages ...interface{})
     func Contains(t *testing.T, expected string, got string, messages ...interface{})
     func NotContains(t *testing.T, unexpected string, got string, messages ...interface{})
+    func WithinDuration(t *testing.T, duration time.Duration, goalTime, gotTime time.Time, messages ...interface{})
 
 Example
 -------
