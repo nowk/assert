@@ -1,6 +1,8 @@
 # Assert
 
-Simple test assertions for Go. This is a fork of a fork of a [bmizerany/assert][original]
+[![Build Status](https://travis-ci.org/nowk/assert.svg?branch=master)](https://travis-ci.org/nowk/assert)
+
+Simple test assertions for Go. This is a fork of a fork of a fork of [bmizerany/assert][original]
 with improved support for things like nil pointers, etc.
 
 [Documentation][docs]
