@@ -6,88 +6,88 @@ import (
 )
 
 type MyStruct struct {
-    Sub *MyStruct
+	Sub *MyStruct
 }
 
 func TestEqual(t *testing.T) {
-    Equal(t, "foo", "foo")
-    Equal(t, true, true)
+	Equal(t, "foo", "foo")
+	Equal(t, true, true)
 
-    myStructA := MyStruct{}
-    myStructB := MyStruct{}
-    Equal(t, myStructA, myStructB)
+	myStructA := MyStruct{}
+	myStructB := MyStruct{}
+	Equal(t, myStructA, myStructB)
 
-    // Equal(t, "foo", "bar", "this should blow up")
+	// Equal(t, "foo", "bar", "this should blow up")
 }
 
 func TestNotEqual(t *testing.T) {
-    NotEqual(t, "foo", "bar", "msg!")
-    NotEqual(t, nil, false)
+	NotEqual(t, "foo", "bar", "msg!")
+	NotEqual(t, nil, false)
 
-    myStructA := MyStruct{}
-    myStructB := MyStruct{&myStructA}
-    NotEqual(t, myStructA, myStructB)
-    NotEqual(t, &myStructA, myStructA)
+	myStructA := MyStruct{}
+	myStructB := MyStruct{&myStructA}
+	NotEqual(t, myStructA, myStructB)
+	NotEqual(t, &myStructA, myStructA)
 
-    // NotEqual(t, "foo", "foo", "this should blow up")
+	// NotEqual(t, "foo", "foo", "this should blow up")
 }
 
 func TestTrue(t *testing.T) {
-    True(t, true)
+	True(t, true)
 }
 
 func TestFalse(t *testing.T) {
-    False(t, false)
+	False(t, false)
 }
 
 func TestNil(t *testing.T) {
-    Nil(t, nil)
+	Nil(t, nil)
 
-    var nilChan chan int
-    Nil(t, nilChan)
+	var nilChan chan int
+	Nil(t, nilChan)
 
-    var nilFunc func(int) int
-    Nil(t, nilFunc)
+	var nilFunc func(int) int
+	Nil(t, nilFunc)
 
-    var nilInterface interface{}
-    Nil(t, nilInterface)
+	var nilInterface interface{}
+	Nil(t, nilInterface)
 
-    var nilMap map[string]string
-    Nil(t, nilMap)
+	var nilMap map[string]string
+	Nil(t, nilMap)
 
-    var myStruct MyStruct
-    Nil(t, myStruct.Sub) // nil pointer
+	var myStruct MyStruct
+	Nil(t, myStruct.Sub) // nil pointer
 
-    var nilSlice []string
-    Nil(t, nilSlice)
+	var nilSlice []string
+	Nil(t, nilSlice)
 
-    // Nil(t, "foo", "this should blow up")
+	// Nil(t, "foo", "this should blow up")
 }
 
 func TestNotNil(t *testing.T) {
-    NotNil(t, "foo")
+	NotNil(t, "foo")
 
-    myStruct := MyStruct{}
-    NotNil(t, myStruct)
-    NotNil(t, &myStruct)
+	myStruct := MyStruct{}
+	NotNil(t, myStruct)
+	NotNil(t, &myStruct)
 
-    // NotNil(t, nil, "this should blow up")
-    // var myNilStruct MyStruct
-    // NotNil(t, myNilStruct, "this should blow up")
+	// NotNil(t, nil, "this should blow up")
+	// var myNilStruct MyStruct
+	// NotNil(t, myNilStruct, "this should blow up")
 }
 
 func TestContains(t *testing.T) {
-    Contains(t, "foo", "bizmarfooba")
-    Contains(t, "", "bizmarfooba")
+	Contains(t, "foo", "bizmarfooba")
+	Contains(t, "", "bizmarfooba")
 
-    // Contains(t, "cool", "", "This should blow up")
+	// Contains(t, "cool", "", "This should blow up")
 }
 
 func TestNotContains(t *testing.T) {
-    NotContains(t, "a", "")
-    NotContains(t, "Lorem", "lorem")
+	NotContains(t, "a", "")
+	NotContains(t, "Lorem", "lorem")
 
-    // NotContains(t, "c", "abc", "This should blow up")
+	// NotContains(t, "c", "abc", "This should blow up")
 }
 
 func TestWithinDuration(t *testing.T) {
@@ -100,4 +100,14 @@ func TestWithinDuration(t *testing.T) {
 
 	// WithinDuration(t, time.Millisecond, now, now.Add(time.Second), "This should blow up")
 	// WithinDuration(t, time.Millisecond, now, now.Add(-time.Second), "This should blow up")
+}
+
+func TestTypeOf(t *testing.T) {
+	a := MyStruct{}
+	b := &MyStruct{}
+
+	TypeOf(t, "assert.MyStruct", a)
+	TypeOf(t, "*assert.MyStruct", b)
+
+	// TypeOf(t, "other", b, "this should blow up")
 }
