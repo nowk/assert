@@ -12,6 +12,12 @@ import (
 
 var errorPrefix = "! "
 
+func handleMessages(t *testing.T, messages ...interface{}) {
+	if len(messages) > 0 {
+		t.Error(errorPrefix, "-", fmt.Sprint(messages...))
+	}
+}
+
 // -- Assertion handlers
 
 func assert(t *testing.T, success bool, f func(), callDepth int) {
@@ -28,9 +34,7 @@ func equal(t *testing.T, expected, got interface{}, callDepth int, messages ...i
 		for _, desc := range pretty.Diff(expected, got) {
 			t.Error(errorPrefix, desc)
 		}
-		if len(messages) > 0 {
-			t.Error(errorPrefix, "-", fmt.Sprint(messages...))
-		}
+		handleMessages(t, messages...)
 	}
 	assert(t, isEqual(expected, got), fn, callDepth+1)
 }
@@ -38,9 +42,7 @@ func equal(t *testing.T, expected, got interface{}, callDepth int, messages ...i
 func notEqual(t *testing.T, expected, got interface{}, callDepth int, messages ...interface{}) {
 	fn := func() {
 		t.Errorf("%s Unexpected: %#v", errorPrefix, got)
-		if len(messages) > 0 {
-			t.Error(errorPrefix, "-", fmt.Sprint(messages...))
-		}
+		handleMessages(t, messages...)
 	}
 	assert(t, !isEqual(expected, got), fn, callDepth+1)
 }
@@ -49,9 +51,7 @@ func contains(t *testing.T, expected, got string, callDepth int, messages ...int
 	fn := func() {
 		t.Errorf("%s Expected to find: %#v", errorPrefix, expected)
 		t.Errorf("%s in: %#v", errorPrefix, got)
-		if len(messages) > 0 {
-			t.Error(errorPrefix, "-", fmt.Sprint(messages...))
-		}
+		handleMessages(t, messages...)
 	}
 	assert(t, strings.Contains(got, expected), fn, callDepth+1)
 }
@@ -60,9 +60,7 @@ func notContains(t *testing.T, unexpected, got string, callDepth int, messages .
 	fn := func() {
 		t.Errorf("%s Expected not to find: %#v", errorPrefix, unexpected)
 		t.Errorf("%s in: %#v", errorPrefix, got)
-		if len(messages) > 0 {
-			t.Error(errorPrefix, "-", fmt.Sprint(messages...))
-		}
+		handleMessages(t, messages...)
 	}
 	assert(t, !strings.Contains(got, unexpected), fn, callDepth+1)
 }
@@ -73,9 +71,7 @@ func typeOf(t *testing.T, expected string, got interface{}, messages ...interfac
 	_type := reflect.TypeOf(got)
 	if v := _type.String(); v != expected {
 		t.Errorf("Expected TypeOf %s, got %s", expected, v)
-		if len(messages) > 0 {
-			t.Error(errorPrefix, "-", fmt.Sprint(messages...))
-		}
+		handleMessages(t, messages...)
 	}
 }
 
