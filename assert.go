@@ -67,12 +67,16 @@ func notContains(t *testing.T, unexpected, got string, callDepth int, messages .
 
 // -- TypeOF
 
-func typeOf(t *testing.T, expected string, got interface{}, messages ...interface{}) {
+func typeOf(t *testing.T, expected string, got interface{}, callDepth int, messages ...interface{}) {
 	_type := reflect.TypeOf(got)
-	if v := _type.String(); v != expected {
-		t.Errorf("Expected TypeOf %s, got %s", expected, v)
+	v := _type.String()
+
+	fn := func() {
+		t.Errorf("%s Expected TypeOf %s, got %s", errorPrefix, expected, v)
 		handleMessages(t, messages...)
 	}
+
+	assert(t, v == expected, fn, callDepth+1)
 }
 
 // -- Duration
@@ -156,5 +160,5 @@ func Panic(t *testing.T, err interface{}, fn func(), messages ...interface{}) {
 }
 
 func TypeOf(t *testing.T, expected string, got interface{}, messages ...interface{}) {
-	typeOf(t, expected, got, messages)
+	typeOf(t, expected, got, 1, messages)
 }
