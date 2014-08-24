@@ -75,6 +75,22 @@ func typeOf(t *testing.T, expected string, got interface{}, messages ...interfac
 	}
 }
 
+// -- Duration
+
+func withinDuration(t *testing.T, duration time.Duration, goalTime, gotTime time.Time, callDepth int, messages ...interface{}) {
+	fn := func() {
+		t.Errorf("%s Expected %v to be within %v of %v", errorPrefix, gotTime, duration, goalTime)
+		if len(messages) > 0 {
+			t.Error(errorPrefix, "-", fmt.Sprint(messages...))
+		}
+	}
+	actualDuration := goalTime.Sub(gotTime)
+	if actualDuration < time.Duration(0) {
+		actualDuration = -actualDuration
+	}
+	assert(t, actualDuration <= duration, fn, callDepth+1)
+}
+
 // -- Matching
 
 func isEqual(expected, got interface{}) bool {
