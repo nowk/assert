@@ -1,6 +1,7 @@
 language: go
 install:
   - go get github.com/kr/pretty
+  - go get gopkg.in/check.v1
 go:
   - "1.0"
   - "1.1"
