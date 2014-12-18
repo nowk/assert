@@ -1,113 +1,164 @@
 package assert
 
 import (
+	"fmt"
 	"testing"
-	"time"
 )
 
+type TestingMock struct {
+	ErrorfStr []string
+}
+
+func (m *TestingMock) Errorf(p string, v ...interface{}) {
+	m.ErrorfStr = append(m.ErrorfStr, fmt.Sprintf(p, v...))
+}
+
+func (TestingMock) Fail()    {}
+func (TestingMock) FailNow() {}
+
+// MyStruct is a sample struct
 type MyStruct struct {
 	Sub *MyStruct
 }
 
-func TestEqual(t *testing.T) {
+func TestEqual_OK(t *testing.T) {
 	Equal(t, "foo", "foo")
 	Equal(t, true, true)
-
-	myStructA := MyStruct{}
-	myStructB := MyStruct{}
-	Equal(t, myStructA, myStructB)
-
-	// Equal(t, "foo", "bar", "this should blow up")
+	Equal(t, MyStruct{}, MyStruct{})
 }
 
-func TestNotEqual(t *testing.T) {
-	NotEqual(t, "foo", "bar", "msg!")
+func TestEqual_Fail(t *testing.T) {
+	tm := &TestingMock{}
+
+	Equal(tm, "foo", "bar")
+	Equal(t, "! Expected `foo` to equal `bar`", tm.ErrorfStr[1])
+	Equal(t, "- \"foo\" != \"bar\"", tm.ErrorfStr[2])
+}
+
+func TestNotEqual_OK(t *testing.T) {
+	NotEqual(t, "foo", "bar")
 	NotEqual(t, nil, false)
-
-	myStructA := MyStruct{}
-	myStructB := MyStruct{&myStructA}
-	NotEqual(t, myStructA, myStructB)
-	NotEqual(t, &myStructA, myStructA)
-
-	// NotEqual(t, "foo", "foo", "this should blow up")
+	NotEqual(t, MyStruct{}, MyStruct{&MyStruct{}})
+	NotEqual(t, &MyStruct{}, MyStruct{})
 }
 
-func TestTrue(t *testing.T) {
+func TestNotEqual_Fail(t *testing.T) {
+	tm := &TestingMock{}
+
+	NotEqual(tm, "foo", "foo")
+	Equal(t, "! Expected `foo` to not equal `foo`", tm.ErrorfStr[1])
+	Equal(t, "- Unexpected `foo`", tm.ErrorfStr[2])
+}
+
+func TestTrue_OK(t *testing.T) {
 	True(t, true)
 }
 
-func TestFalse(t *testing.T) {
+func TestTrue_Fail(t *testing.T) {
+	tm := &TestingMock{}
+
+	True(tm, false)
+	Equal(t, "! Expected to be true", tm.ErrorfStr[1])
+}
+
+func TestFalse_OK(t *testing.T) {
 	False(t, false)
 }
 
-func TestNil(t *testing.T) {
+func TestFalse_Fail(t *testing.T) {
+	tm := &TestingMock{}
+
+	False(tm, true)
+	Equal(t, "! Expected to be false", tm.ErrorfStr[1])
+}
+
+func TestNil_OK(t *testing.T) {
 	Nil(t, nil)
 
-	var nilChan chan int
+	var (
+		nilChan      chan int
+		nilFunc      func(int) int
+		nilInterface interface{}
+		nilMap       map[string]string
+		myStruct     MyStruct
+		nilSlice     []string
+	)
+
 	Nil(t, nilChan)
-
-	var nilFunc func(int) int
 	Nil(t, nilFunc)
-
-	var nilInterface interface{}
 	Nil(t, nilInterface)
-
-	var nilMap map[string]string
 	Nil(t, nilMap)
-
-	var myStruct MyStruct
 	Nil(t, myStruct.Sub) // nil pointer
-
-	var nilSlice []string
 	Nil(t, nilSlice)
-
-	// Nil(t, "foo", "this should blow up")
 }
 
-func TestNotNil(t *testing.T) {
+func TestNil_Fail(t *testing.T) {
+	tm := &TestingMock{}
+
+	Nil(tm, "hello!")
+	Equal(t, "! Expected nil", tm.ErrorfStr[1])
+	Equal(t, "- Unexpected `hello!`", tm.ErrorfStr[2])
+
+}
+
+func TestNotNil_OK(t *testing.T) {
 	NotNil(t, "foo")
-
-	myStruct := MyStruct{}
-	NotNil(t, myStruct)
-	NotNil(t, &myStruct)
-
-	// NotNil(t, nil, "this should blow up")
-	// var myNilStruct MyStruct
-	// NotNil(t, myNilStruct, "this should blow up")
+	NotNil(t, MyStruct{})
+	NotNil(t, &MyStruct{})
 }
 
-func TestContains(t *testing.T) {
-	Contains(t, "foo", "bizmarfooba")
-	Contains(t, "", "bizmarfooba")
+func TestNotNil_Fail(t *testing.T) {
+	tm := &TestingMock{}
 
-	// Contains(t, "cool", "", "This should blow up")
+	NotNil(tm, nil)
+	Equal(t, "! Unexpected nil", tm.ErrorfStr[1])
 }
 
-func TestNotContains(t *testing.T) {
-	NotContains(t, "a", "")
-	NotContains(t, "Lorem", "lorem")
-
-	// NotContains(t, "c", "abc", "This should blow up")
+func TestPanic_OK(t *testing.T) {
+	Panic(t, "uh-oh!", func() {
+		panic("uh-oh!")
+	})
 }
 
-func TestWithinDuration(t *testing.T) {
-	now := time.Now()
-	WithinDuration(t, time.Millisecond, now, now)
-	WithinDuration(t, time.Second, now, now.Add(time.Second))
-	WithinDuration(t, time.Second, now, now.Add(-time.Second))
-	WithinDuration(t, time.Second, now, now.Add(999*time.Millisecond))
-	WithinDuration(t, time.Second, now, now.Add(-999*time.Millisecond))
+func TestPanic_Fail(t *testing.T) {
+	{
+		tm := &TestingMock{}
 
-	// WithinDuration(t, time.Millisecond, now, now.Add(time.Second), "This should blow up")
-	// WithinDuration(t, time.Millisecond, now, now.Add(-time.Second), "This should blow up")
+		Panic(tm, "uh-oh", func() {})
+		Equal(t, "! Expected panic `uh-oh`", tm.ErrorfStr[1])
+		Equal(t, "- No panic", tm.ErrorfStr[2])
+	}
+
+	{
+		tm := &TestingMock{}
+
+		Panic(tm, "uh-oh", func() {
+			panic("boom")
+		})
+		Equal(t, "! Expected panic `uh-oh`", tm.ErrorfStr[1])
+		Equal(t, "- Unexpected `boom`", tm.ErrorfStr[2])
+	}
 }
 
-func TestTypeOf(t *testing.T) {
-	a := MyStruct{}
-	b := &MyStruct{}
+func TestTypeOf_OK(t *testing.T) {
+	TypeOf(t, "assert.MyStruct", MyStruct{})
+	TypeOf(t, "*assert.MyStruct", &MyStruct{})
+}
 
-	TypeOf(t, "assert.MyStruct", a)
-	TypeOf(t, "*assert.MyStruct", b)
+func TestTypeOf_Fail(t *testing.T) {
+	tm := &TestingMock{}
 
-	// TypeOf(t, "other", b, "this should blow up")
+	TypeOf(tm, "assert.MyStruct", &MyStruct{})
+	Equal(t, "! Expected type `assert.MyStruct` but got `*assert.MyStruct`",
+		tm.ErrorfStr[1])
+}
+
+func TestExtraMessage(t *testing.T) {
+	tm := &TestingMock{}
+
+	Equal(tm, "foo", "bar", "baz", "qux")
+	Equal(t, "! Expected `foo` to equal `bar`", tm.ErrorfStr[1])
+	Equal(t, "- \"foo\" != \"bar\"", tm.ErrorfStr[2])
+	Equal(t, "- baz", tm.ErrorfStr[3])
+	Equal(t, "- qux", tm.ErrorfStr[4])
 }

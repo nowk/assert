@@ -2,162 +2,113 @@ package assert
 
 import (
 	"fmt"
-	"github.com/kr/pretty"
+	. "github.com/kr/pretty"
+	. "github.com/nowk/assert/tests"
+	. "github.com/nowk/go-calm"
 	"reflect"
 	"runtime"
-	"strings"
-	"time"
 )
 
-var errorPrefix = "! "
+const (
+	Prefix = "! "
+)
 
-func handleMessages(t Testing, messages ...interface{}) {
-	if len(messages) > 0 {
-		t.Error(errorPrefix, "-", fmt.Sprint(messages...))
-	}
+type Testing interface {
+	Errorf(string, ...interface{})
+	Fail()
+	FailNow()
 }
 
-// -- Assertion handlers
+// Fail fails a test and outputs the caller and message
+// In most cases callDepth is 2. Panics are 4.
+func Fail(t Testing, callDepth int, msg string, x ...interface{}) {
+	_, f, ln, _ := runtime.Caller(callDepth)
+	t.Errorf("%s:%d", f, ln)
+	t.Errorf("%s%s", Prefix, msg)
 
-func assert(t Testing, success bool, f func(), callDepth int) {
-	if !success {
-		_, file, line, _ := runtime.Caller(callDepth + 1)
-		t.Errorf("%s:%d", file, line)
-		f()
-		t.FailNow()
+	for _, v := range x {
+		t.Errorf("- %s", v)
 	}
+
+	t.FailNow()
 }
 
-func equal(t Testing, expected, got interface{}, callDepth int, messages ...interface{}) {
-	fn := func() {
-		for _, desc := range pretty.Diff(expected, got) {
-			t.Error(errorPrefix, desc)
+func unshift(i []interface{}, m ...interface{}) []interface{} {
+	return append(m, i...)
+}
+
+func Equal(t Testing, exp, got interface{}, m ...interface{}) {
+	if !IsEqual(exp, got) {
+		var i []interface{}
+		for _, v := range Diff(exp, got) {
+			i = append(i, v)
 		}
-		handleMessages(t, messages...)
+		m = unshift(m, i...)
+
+		Fail(t, 2, fmt.Sprintf("Expected `%s` to equal `%s`", exp, got), m...)
 	}
-	assert(t, isEqual(expected, got), fn, callDepth+1)
 }
 
-func notEqual(t Testing, expected, got interface{}, callDepth int, messages ...interface{}) {
-	fn := func() {
-		t.Errorf("%s Unexpected: %#v", errorPrefix, got)
-		handleMessages(t, messages...)
+func NotEqual(t Testing, exp, got interface{}, m ...interface{}) {
+	if IsEqual(exp, got) {
+		m = unshift(m, fmt.Sprintf("Unexpected `%s`", got))
+		Fail(t, 2, fmt.Sprintf("Expected `%s` to not equal `%s`", exp, got), m...)
 	}
-	assert(t, !isEqual(expected, got), fn, callDepth+1)
 }
 
-func contains(t Testing, expected, got string, callDepth int, messages ...interface{}) {
-	fn := func() {
-		t.Errorf("%s Expected to find: %#v", errorPrefix, expected)
-		t.Errorf("%s in: %#v", errorPrefix, got)
-		handleMessages(t, messages...)
+func True(t Testing, got interface{}, m ...interface{}) {
+	if !IsEqual(true, got) {
+		Fail(t, 2, "Expected to be true", m...)
 	}
-	assert(t, strings.Contains(got, expected), fn, callDepth+1)
 }
 
-func notContains(t Testing, unexpected, got string, callDepth int, messages ...interface{}) {
-	fn := func() {
-		t.Errorf("%s Expected not to find: %#v", errorPrefix, unexpected)
-		t.Errorf("%s in: %#v", errorPrefix, got)
-		handleMessages(t, messages...)
+func False(t Testing, got interface{}, m ...interface{}) {
+	if !IsEqual(false, got) {
+		Fail(t, 2, "Expected to be false", m...)
 	}
-	assert(t, !strings.Contains(got, unexpected), fn, callDepth+1)
 }
 
-// -- TypeOF
+func Nil(t Testing, got interface{}, m ...interface{}) {
+	if !IsEqual(nil, got) {
+		m = unshift(m, fmt.Sprintf("Unexpected `%s`", got))
+		Fail(t, 2, "Expected nil", m...)
+	}
+}
 
-func typeOf(t Testing, expected string, got interface{}, callDepth int, messages ...interface{}) {
-	_type := reflect.TypeOf(got)
-	v := _type.String()
+func NotNil(t Testing, got interface{}, m ...interface{}) {
+	if IsEqual(nil, got) {
+		Fail(t, 2, "Unexpected nil", m...)
+	}
+}
 
-	fn := func() {
-		t.Errorf("%s Expected TypeOf %s, got %s", errorPrefix, expected, v)
-		handleMessages(t, messages...)
+func Panic(t Testing, exp string, fn func(), m ...interface{}) {
+	msg := fmt.Sprintf("Expected panic `%s`", exp)
+	err := Calm(fn)
+	if err == nil {
+		m = unshift(m, "No panic")
+		Fail(t, 2, msg, m...)
+		return
 	}
 
-	assert(t, v == expected, fn, callDepth+1)
-}
-
-// -- Duration
-
-func withinDuration(t Testing, duration time.Duration, goalTime, gotTime time.Time, callDepth int, messages ...interface{}) {
-	fn := func() {
-		t.Errorf("%s Expected %v to be within %v of %v", errorPrefix, gotTime, duration, goalTime)
-		handleMessages(t, messages...)
+	got := err.Error()
+	if !IsEqual(exp, got) {
+		m = unshift(m, fmt.Sprintf("Unexpected `%s`", got))
+		Fail(t, 4, msg, m...)
 	}
-	actualDuration := goalTime.Sub(gotTime)
-	if actualDuration < time.Duration(0) {
-		actualDuration = -actualDuration
+}
+
+func TypeOf(t Testing, exp string, got interface{}, m ...interface{}) {
+	to := reflect.TypeOf(got)
+	vs := to.String()
+	if !IsEqual(exp, vs) {
+		Fail(t, 2, fmt.Sprintf("Expected type `%s` but got `%s`", exp, vs), m...)
 	}
-	assert(t, actualDuration <= duration, fn, callDepth+1)
 }
 
-// -- Matching
-
-func isEqual(expected, got interface{}) bool {
-	if expected == nil {
-		return isNil(got)
+// Assert is a general use assert to test a bool with custom message.
+// If you need control over callDepth use Fail directly
+func Assert(t Testing, ok bool, msg string, m ...interface{}) {
+	if !ok {
+		Fail(t, 2, msg, m...)
 	}
-	return reflect.DeepEqual(expected, got)
-}
-
-func isNil(got interface{}) bool {
-	if got == nil {
-		return true
-	}
-	value := reflect.ValueOf(got)
-	switch value.Kind() {
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
-		return value.IsNil()
-	}
-	return false
-}
-
-// -- Public API
-
-func Equal(t Testing, expected, got interface{}, messages ...interface{}) {
-	equal(t, expected, got, 1, messages...)
-}
-
-func NotEqual(t Testing, expected, got interface{}, messages ...interface{}) {
-	notEqual(t, expected, got, 1, messages...)
-}
-
-func True(t Testing, got interface{}, messages ...interface{}) {
-	equal(t, true, got, 1, messages...)
-}
-
-func False(t Testing, got interface{}, messages ...interface{}) {
-	equal(t, false, got, 1, messages...)
-}
-
-func Nil(t Testing, got interface{}, messages ...interface{}) {
-	equal(t, nil, got, 1, messages...)
-}
-
-func NotNil(t Testing, got interface{}, messages ...interface{}) {
-	notEqual(t, nil, got, 1, messages...)
-}
-
-func Contains(t Testing, expected, got string, messages ...interface{}) {
-	contains(t, expected, got, 1, messages...)
-}
-
-func NotContains(t Testing, unexpected, got string, messages ...interface{}) {
-	notContains(t, unexpected, got, 1, messages...)
-}
-
-func WithinDuration(t Testing, duration time.Duration, goalTime, gotTime time.Time, messages ...interface{}) {
-	withinDuration(t, duration, goalTime, gotTime, 1, messages...)
-}
-
-func Panic(t Testing, err interface{}, fn func(), messages ...interface{}) {
-	defer func() {
-		equal(t, err, recover(), 3, messages...)
-	}()
-	fn()
-}
-
-func TypeOf(t Testing, expected string, got interface{}, messages ...interface{}) {
-	typeOf(t, expected, got, 1, messages)
 }
