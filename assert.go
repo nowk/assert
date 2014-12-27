@@ -3,8 +3,8 @@ package assert
 import (
 	"fmt"
 	. "github.com/kr/pretty"
-	. "github.com/nowk/assert/tests"
-	. "github.com/nowk/go-calm"
+	. "gopkg.in/nowk/assert.v2/tests"
+	. "gopkg.in/nowk/go-calm.v1"
 	"reflect"
 	"runtime"
 )

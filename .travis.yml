@@ -1,7 +1,7 @@
 language: go
 install:
   - go get github.com/kr/pretty
-  - go get github.com/nowk/go-calm
+  - go get gopkg.in/nowk/go-calm.v1
   - go get gopkg.in/check.v1
 go:
   - "1.0"
